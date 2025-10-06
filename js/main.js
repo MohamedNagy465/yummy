@@ -145,13 +145,10 @@ $("#searchLi").click(function () {
 $(document).on("input", "#searchByName", function () {
   let name = $(this).val().trim();
   if (name.length > 0) {
-    showLoading();
+    showLoading()
     $.getJSON(`https://www.themealdb.com/api/json/v1/1/search.php?s=${name}`, function (data) {
-      hideLoading();
+      hideLoading()
       displaySearchResults(data.meals);
-    }).fail(() => {
-      hideLoading();
-      $("#searchResults").html(`<p class="text-center text-danger">Error fetching data.</p>`);
     });
   } else {
     $("#searchResults").empty();
@@ -161,93 +158,89 @@ $(document).on("input", "#searchByName", function () {
 $(document).on("input", "#searchByLetter", function () {
   let letter = $(this).val().trim().charAt(0);
   if (letter && /^[a-zA-Z]$/.test(letter)) {
-    showLoading();
+    showLoading()
     $.getJSON(`https://www.themealdb.com/api/json/v1/1/search.php?f=${letter}`, function (data) {
-      hideLoading();
+      hideLoading()
       displaySearchResults(data.meals);
-    }).fail(() => {
-      hideLoading();
-      $("#searchResults").html(`<p class="text-center text-danger">Error fetching data.</p>`);
     });
   } else {
     $("#searchResults").empty();
   }
 });
-
- function displaySearchResults(meals) {
+function displaySearchResults(meals) {
   let container = $("#searchResults");
   container.empty();
-
-  if (!meals || meals === null) {
-    container.html(`<p class="text-center text-danger">No meals found.</p>`);
-    return;
-  }
-
-  meals.forEach(meal => {
-    if (!meal) return; // تأكد أن meal معرف
-    let mealCard = `
-      <div class="col-md-3 mb-4">
-        <div class="iner text-white h-100 cursor-pointer" data-id="${meal.idMeal}">
-          <img src="${meal.strMealThumb}" class="card-img-top" alt="${meal.strMeal}">
-          <div class="meal-layer">
-            <h5 class="text-black">${meal.strMeal}</h5>
+  setTimeout(() => {
+    hideLoading();
+    if (!meals) {
+      container.html(`<p class="text-center text-danger">No meals found.</p>`);
+      return;
+    }
+    meals.forEach(meal => {
+      let mealCard = `
+        <div class="col-md-3 mb-4">
+          <div class="iner text-white h-100 cursor-pointer" data-id="${meal.idMeal}">
+            <img src="${meal.strMealThumb}" class="card-img-top" alt="${meal.strMeal}">
+            <div class="meal-layer">
+              <h5 class="text-black">${meal.strMeal}</h5>
+            </div>
           </div>
         </div>
-      </div>
-    `;
-    container.append(mealCard);
+      `;
+      container.append(mealCard);
+    });
+
+  }, 300); 
+}
+
+$(document).on("click", ".iner", function () {
+  let mealId = $(this).attr("data-id");
+  showLoading();
+  $.getJSON(`https://www.themealdb.com/api/json/v1/1/lookup.php?i=${mealId}`, function (data) {
+    hideLoading();
+    if (data.meals) {
+      let meal = data.meals[0];
+
+      let ingredients = "";
+      for (let i = 1; i <= 20; i++) {
+        let ingredient = meal[`strIngredient${i}`];
+        let measure = meal[`strMeasure${i}`];
+        if (ingredient && ingredient.trim() !== "") {
+          ingredients += `<li class="badge bg-primary text-white m-1">${measure} ${ingredient}</li>`;
+        }
+      }
+
+      let tags = meal.strTags
+        ? meal.strTags.split(",").map(tag => `<span class="badge bg-warning text-dark m-1">${tag}</span>`).join(" ")
+        : "";
+
+      let mealDetails = `
+        <div class="container py-4 text-white">
+          <div class="row">
+            <div class="col-md-4">
+              <img src="${meal.strMealThumb}" class="img-fluid rounded mb-3 shadow">
+              <h3 class="mt-2">${meal.strMeal}</h3>
+              <p><strong class="text-info">Category:</strong> ${meal.strCategory || 'N/A'}</p>
+              <p><strong class="text-info">Area:</strong> ${meal.strArea || 'N/A'}</p>
+              <div class="mb-2">${tags}</div>
+              <a href="${meal.strSource}" target="_blank" class="btn btn-outline-light btn-sm me-2">Source</a>
+              <a href="${meal.strYoutube}" target="_blank" class="btn btn-danger btn-sm">YouTube</a>
+            </div>
+            <div class="col-md-8">
+              <h4 class="text-warning">Instructions</h4>
+              <p class="text-light">${meal.strInstructions}</p>
+              <h5 class="text-success mt-4">Ingredients</h5>
+              <ul class="list-unstyled d-flex flex-wrap">${ingredients}</ul>
+            </div>
+          </div>
+        </div>
+      `;
+
+      $("#searchPage").hide();
+      $("#rowData").html(mealDetails).show();
+    }
   });
- }
-//   }, 300); 
-// }
-// $(document).on("click", ".iner", function () {
-//   let mealId = $(this).attr("data-id");
-//   showLoading();
-//   $.getJSON(`https://www.themealdb.com/api/json/v1/1/lookup.php?i=${mealId}`, function (data) {
-//     hideLoading();
-//     if (data.meals) {
-//       let meal = data.meals[0];
-
-//       let ingredients = "";
-//       for (let i = 1; i <= 20; i++) {
-//         let ingredient = meal[`strIngredient${i}`];
-//         let measure = meal[`strMeasure${i}`];
-//         if (ingredient && ingredient.trim() !== "") {
-//           ingredients += `<li class="badge bg-primary text-white m-1">${measure} ${ingredient}</li>`;
-//         }
-//       }
-
-//       let tags = meal.strTags
-//         ? meal.strTags.split(",").map(tag => `<span class="badge bg-warning text-dark m-1">${tag}</span>`).join(" ")
-//         : "";
-
-//       let mealDetails = `
-//         <div class="container py-4 text-white">
-//           <div class="row">
-//             <div class="col-md-4">
-//               <img src="${meal.strMealThumb}" class="img-fluid rounded mb-3 shadow">
-//               <h3 class="mt-2">${meal.strMeal}</h3>
-//               <p><strong class="text-info">Category:</strong> ${meal.strCategory || 'N/A'}</p>
-//               <p><strong class="text-info">Area:</strong> ${meal.strArea || 'N/A'}</p>
-//               <div class="mb-2">${tags}</div>
-//               <a href="${meal.strSource}" target="_blank" class="btn btn-outline-light btn-sm me-2">Source</a>
-//               <a href="${meal.strYoutube}" target="_blank" class="btn btn-danger btn-sm">YouTube</a>
-//             </div>
-//             <div class="col-md-8">
-//               <h4 class="text-warning">Instructions</h4>
-//               <p class="text-light">${meal.strInstructions}</p>
-//               <h5 class="text-success mt-4">Ingredients</h5>
-//               <ul class="list-unstyled d-flex flex-wrap">${ingredients}</ul>
-//             </div>
-//           </div>
-//         </div>
-//       `;
-
-//       $("#searchPage").hide();
-//       $("#rowData").html(mealDetails).show();
-//     }
-//   });
-// });
+});
 async function getCategories() {
   $(".loading").fadeIn(200);
   $("body").css("overflow", "hidden");
